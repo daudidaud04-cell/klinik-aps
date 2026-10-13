@@ -1,0 +1,29 @@
+import { usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+
+export function useFlash() {
+    const { props } = usePage<{
+        flash: {
+            success?: string;
+            error?: string;
+            warning?: string;
+            info?: string;
+        };
+    }>();
+
+    useEffect(() => {
+        if (props.flash?.success) {
+            toast.success(props.flash.success);
+        }
+        if (props.flash?.error) {
+            toast.error(props.flash.error);
+        }
+        if (props.flash?.warning) {
+            toast.warning(props.flash.warning);
+        }
+        if (props.flash?.info) {
+            toast.info(props.flash.info);
+        }
+    }, [props.flash]);
+}

@@ -1,0 +1,84 @@
+# Laravel / PHPUnit
+/.phpunit.cache
+/.phpunit.result.cache
+/phpunit.xml
+
+# Laravel SSR
+/bootstrap/ssr
+
+# Dependencies
+/node_modules
+/vendor
+
+# Build frontend
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+
+# Environment dan rahasia
+.env
+.env.*
+!.env.example
+!.env.testing.example
+
+# Kunci dan file autentikasi
+/storage/*.key
+/auth.json
+
+# Database lokal - cegah database berisi data pasien terunggah
+/database/*.sqlite
+/database/*.sqlite-*
+/database/*.db
+/database/*.db-*
+/database/dumps/
+/database/backups/
+
+# Log aplikasi
+/storage/logs/*
+/storage/logs/**
+
+# Cache, session, dan view hasil kompilasi
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+
+# Laravel Pail
+/storage/pail
+
+# File hasil generate frontend / routing
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+
+# File konfigurasi lokal
+/.phpactor.json
+/Homestead.json
+/Homestead.yaml
+
+# Log package manager
+npm-debug.log
+yarn-error.log
+pnpm-debug.log*
+
+# Sistem operasi
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE dan editor
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# File sementara editor
+*.swp
+*.swo
+*~
+
+# Backup lokal
+*.bak
+*.tmp

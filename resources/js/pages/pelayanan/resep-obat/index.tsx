@@ -1,0 +1,299 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { usePermissions } from '@/hooks/use-permissions';
+import { type BreadcrumbItem } from '@/types';
+import { type ResepObat } from '@/types/resep-obat';
+import { Head, Link, router } from '@inertiajs/react';
+import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Resep Obat', href: '/pelayanan/resep-obat' },
+];
+
+const statusVariant = (status: string) => {
+    if (status === 'selesai') return 'default' as const;
+    if (status === 'diproses') return 'secondary' as const;
+    if (status === 'batal') return 'destructive' as const;
+    return 'outline' as const;
+};
+
+// 🔧 FIX: format tanggal ISO jadi human-readable, sama seperti di show.tsx
+function formatTanggal(value: string) {
+    if (!value) return '-';
+    const date = new Date(value);
+    return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+}
+
+interface Props {
+    reseps: {
+        data: ResepObat[];
+        links: { url: string | null; label: string; active: boolean }[];
+    };
+    filters: { search?: string; status?: string };
+}
+
+export default function ResepObatIndex({ reseps, filters }: Props) {
+    const { can } = usePermissions();
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [status, setStatus] = useState(filters.status ?? '');
+
+    const handleFilter = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        router.get(
+            '/pelayanan/resep-obat',
+            { search, status },
+            { preserveState: true },
+        );
+    };
+
+    const handleReset = () => {
+        setSearch('');
+        setStatus('');
+        router.get('/pelayanan/resep-obat', {}, { preserveState: true });
+    };
+
+    return (
+        <>
+            <Head title="Resep Obat" />
+            <div className="flex flex-1 flex-col gap-4 p-4">
+                <div className="rounded-xl border bg-background p-6">
+                    <div className="mb-6 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold">Resep Obat</h1>
+                            <p className="text-muted-foreground">
+                                Kelola resep obat pasien
+                            </p>
+                        </div>
+                        {can('resep-obat.create') && (
+                            <Button asChild>
+                                <Link href="/pelayanan/resep-obat/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Buat Resep
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
+
+                    <form
+                        onSubmit={handleFilter}
+                        className="mb-4 flex flex-wrap gap-2"
+                    >
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Cari no. resep atau nama pasien..."
+                            className="max-w-xs"
+                        />
+                        <Select
+                            value={status}
+                            onValueChange={(v) => setStatus(v)}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue placeholder="Semua Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="menunggu">
+                                    Menunggu
+                                </SelectItem>
+                                <SelectItem value="diproses">
+                                    Diproses
+                                </SelectItem>
+                                <SelectItem value="selesai">Selesai</SelectItem>
+                                <SelectItem value="batal">Batal</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button type="submit" variant="secondary">
+                            Cari
+                        </Button>
+                        {(search || status) && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                        )}
+                    </form>
+
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>No. Resep</TableHead>
+                                <TableHead>Pasien</TableHead>
+                                <TableHead>Dokter</TableHead>
+                                <TableHead>Tanggal</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">
+                                    Aksi
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {reseps.data.length > 0 ? (
+                                reseps.data.map((r) => (
+                                    <TableRow key={r.id}>
+                                        <TableCell className="font-mono text-xs">
+                                            {r.nomor_resep}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div>
+                                                <p className="font-medium">
+                                                    {r.pasien?.full_name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {
+                                                        r.pasien
+                                                            ?.medical_record_number
+                                                    }
+                                                </p>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {r.dokter?.name ?? '-'}
+                                        </TableCell>
+                                        {/* 🔧 FIX: pakai formatTanggal, bukan tampilkan r.tanggal_resep mentah */}
+                                        <TableCell>{formatTanggal(r.tanggal_resep)}</TableCell>
+                                        <TableCell>
+                                            {r.total_harga_formatted}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={statusVariant(
+                                                    r.status,
+                                                )}
+                                            >
+                                                {r.status_label}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <Link
+                                                        href={`/pelayanan/resep-obat/${r.id}`}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                {can('resep-obat.update') && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={`/pelayanan/resep-obat/${r.id}/edit`}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                                {can('resep-obat.delete') && (
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            if (
+                                                                confirm(
+                                                                    `Hapus resep ${r.nomor_resep}?`,
+                                                                )
+                                                            ) {
+                                                                router.delete(
+                                                                    `/pelayanan/resep-obat/${r.id}`,
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                    },
+                                                                );
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={7}
+                                        className="text-center"
+                                    >
+                                        Belum ada data resep.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    {reseps.links.length > 3 && (
+                        <div className="mt-4 flex flex-wrap gap-1">
+                            {reseps.links.map((link, i) =>
+                                link.url ? (
+                                    <Button
+                                        key={i}
+                                        asChild
+                                        size="sm"
+                                        variant={
+                                            link.active ? 'default' : 'outline'
+                                        }
+                                    >
+                                        <Link
+                                            href={link.url}
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        key={i}
+                                        size="sm"
+                                        variant="outline"
+                                        disabled
+                                    >
+                                        <span
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    </Button>
+                                ),
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+}
+
+ResepObatIndex.layout = { breadcrumbs };
